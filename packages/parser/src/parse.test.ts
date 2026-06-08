@@ -5,9 +5,8 @@ import fixture from "../fixtures/instagram-sample.json";
 describe("parseInstagramExport", () => {
   const result = parseInstagramExport(fixture as InstagramExport, new Date("2026-06-08T00:00:00.000Z"));
 
-  it("emits late_night_usage and content_volume signals", () => {
-    const types = result.signals.map((s) => s.type).sort();
-    expect(types).toEqual(["content_volume", "late_night_usage"]);
+  it("emits catalog-id slugs (late-night-activity, content-volume)", () => {
+    expect(result.signals.map((s) => s.type).sort()).toEqual(["content-volume", "late-night-activity"]);
   });
 
   it("marks every signal raw_excluded", () => {

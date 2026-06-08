@@ -2,27 +2,25 @@ import { z } from "zod";
 import { Uuid, Iso, Domain, PrivacyClass } from "../common";
 
 export const SignalCategory = z.enum([
-  "attention_engagement",
-  "social_interaction",
-  "content_exposure",
-  "emotional_behavioral",
-  "wellness",
-  "safety",
-  "growth_development",
-  "composite",
+  "attention_engagement", "social_interaction", "content_exposure",
+  "emotional_behavioral", "wellness", "safety", "growth_development", "composite",
 ]);
 export type SignalCategory = z.infer<typeof SignalCategory>;
 
+/** Catalog v0.3 three-band status. Computed by the engine from a SignalDefinition (or an AgreementRule override). */
+export const SignalStatus = z.enum(["aligned", "attention", "crossed", "insufficient_data"]);
+export type SignalStatus = z.infer<typeof SignalStatus>;
+
 /**
- * A derived, privacy-safe indicator. Raw content is NEVER a Signal and never
- * sits next to one. `raw_excluded` is a hard invariant (ADR-0002).
+ * A derived, privacy-safe indicator. Raw content is NEVER a Signal and never sits next to one.
+ * `raw_excluded` is a hard invariant (ADR-0002). `status` is the optional computed Catalog band.
  */
 export const Signal = z.object({
   id: Uuid,
   family_id: Uuid,
   subject_user_id: Uuid,
   category: SignalCategory,
-  type: z.string(),
+  type: z.string(),                            // references a SignalDefinition.id
   value: z.number(),
   value_type: z.enum(["scalar", "score", "boolean", "categorical"]),
   unit: z.string().nullable(),
@@ -40,6 +38,7 @@ export const Signal = z.object({
   composite_of: z.array(Uuid).nullable(),
   created_at: Iso,
   expires_at: Iso.nullable(),
+  status: SignalStatus.optional(),             // computed from SignalDefinition bands
   metadata: z.record(z.unknown()).default({}),
 });
 export type Signal = z.infer<typeof Signal>;
