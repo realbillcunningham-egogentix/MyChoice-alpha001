@@ -1,0 +1,25 @@
+project_id = "mychoice-alpha001"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:8081"
+# Email OTP for alpha; parental-consent gating layered on top (COPPA).
+
+[storage]
+enabled = true
+# Short-retention bucket for GDPR/Instagram exports is created in a later migration/runbook.
