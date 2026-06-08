@@ -27,6 +27,23 @@ export const Flag = z.object({
 });
 export type Flag = z.infer<typeof Flag>;
 
+/** Family lifecycle status (ADR-0005). */
+export const FamilyStatus = z.enum(["active", "exit_requested", "frozen", "deleted"]);
+export type FamilyStatus = z.infer<typeof FamilyStatus>;
+
+/** Content-free receipt retained after deletion (ADR-0005). Counts only, never content. */
+export const DeletionReceipt = z.object({
+  id: Uuid,
+  family_id: Uuid,
+  requested_by: Uuid.nullable(),
+  scope: z.enum(["family_exit", "child_majority"]),
+  derived_export_provided: z.boolean(),
+  raw_artifacts_deleted: z.boolean(),
+  records_deleted: z.record(z.number()),
+  created_at: Iso,
+});
+export type DeletionReceipt = z.infer<typeof DeletionReceipt>;
+
 /** Decisions and disclosures — NEVER content. */
 export const AuditEvent = z.object({
   id: Uuid,

@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { Uuid, Iso, Domain } from "../common";
 
-/** Roles (Wiser RBAC, extended toward spec governance participants). `professional` is modeled but disabled in Alpha. */
-export const Role = z.enum(["system_admin", "guardian", "child", "professional"]);
+/** Roles (Wiser RBAC, extended toward spec governance participants). `pilot_operator` is a narrow
+ * operational role (ADR-0005), NOT product authority. `professional` is modeled but disabled in Alpha. */
+export const Role = z.enum(["pilot_operator", "guardian", "child", "professional"]);
 export type Role = z.infer<typeof Role>;
 
 export const User = z.object({
@@ -10,6 +11,7 @@ export const User = z.object({
   auth_id: z.string(),
   display_name: z.string(),
   date_of_birth: z.string().nullable(),
+  is_pilot_operator: z.boolean().default(false),
   created_at: Iso,
 });
 export type User = z.infer<typeof User>;

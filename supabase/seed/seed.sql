@@ -1,6 +1,7 @@
 -- Synthetic dev family (1 guardian, 1 child). No real PII. Used by `supabase db reset`.
-insert into users (id, auth_id, display_name, date_of_birth, is_platform_admin) values
-  ('11111111-1111-1111-1111-111111111111','aaaaaaaa-1111-1111-1111-111111111111','Demo Parent','1985-04-01', true),
+-- Note: pilot_operator is a separate operational account, intentionally NOT seeded here.
+insert into users (id, auth_id, display_name, date_of_birth, is_pilot_operator) values
+  ('11111111-1111-1111-1111-111111111111','aaaaaaaa-1111-1111-1111-111111111111','Demo Parent','1985-04-01', false),
   ('22222222-2222-2222-2222-222222222222','bbbbbbbb-2222-2222-2222-222222222222','Demo Teen','2012-09-15', false);
 
 insert into families (id, name, created_by) values

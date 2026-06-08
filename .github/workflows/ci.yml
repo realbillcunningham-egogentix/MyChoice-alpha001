@@ -16,6 +16,8 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      # No lockfile committed yet (Sprint 000). Switch to --frozen-lockfile once pnpm-lock.yaml lands.
+      - run: pnpm install --no-frozen-lockfile
+      # Typecheck the pure TS packages (domain/engine/parser). Mobile (Expo) typecheck/build added in Sprint 001.
+      - run: pnpm typecheck:packages
       - run: pnpm test

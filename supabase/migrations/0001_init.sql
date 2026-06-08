@@ -2,7 +2,7 @@
 -- There is deliberately NO raw-content column anywhere in this schema (ADR-0002).
 create extension if not exists pgcrypto;
 
-create type role as enum ('system_admin','guardian','child','professional');
+create type role as enum ('pilot_operator','guardian','child','professional');
 create type membership_status as enum ('invited','active','suspended','removed');
 create type signal_category as enum ('attention_engagement','social_interaction','content_exposure','emotional_behavioral','wellness','safety','growth_development','composite');
 create type signal_domain as enum ('wellness','social','educational','safety','personal');
@@ -18,7 +18,7 @@ create table users (
   auth_id uuid not null unique,
   display_name text not null,
   date_of_birth date,
-  is_platform_admin boolean not null default false,
+  is_pilot_operator boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -117,7 +117,7 @@ create table agreement_versions (
   agreement_id uuid not null references agreements(id) on delete cascade,
   version_no int not null,
   human_text text not null,
-  rules jsonb not null default '[]',          -- machine-evaluatable AgreementRule[] (ADR-0003)
+  rules jsonb not null default '[]',
   success_criteria jsonb not null default '[]',
   autonomy_criteria jsonb not null default '[]',
   escalation_rules jsonb not null default '[]',
@@ -145,7 +145,7 @@ create table recommendations (
   subject_user_id uuid references users(id) on delete cascade,
   audience text not null check (audience in ('parent','child','shared')),
   agreement_id uuid references agreements(id) on delete set null,
-  body text not null,           -- AI guidance derived from signals only; never raw content
+  body text not null,
   obligations text[] not null default '{}',
   reviewed_by uuid references users(id),
   created_at timestamptz not null default now()

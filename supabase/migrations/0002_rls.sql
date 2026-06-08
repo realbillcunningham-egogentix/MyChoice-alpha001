@@ -39,13 +39,13 @@ alter table consents            enable row level security;
 alter table audit_events        enable row level security;
 
 create policy users_self on users for select
-  using (id = public.current_app_user_id() or is_platform_admin = true);
+  using (id = public.current_app_user_id() or is_pilot_operator = true);
 
 create policy families_member on families for select using (public.is_family_member(id));
 create policy memberships_member on memberships for select using (public.is_family_member(family_id));
 create policy edges_member on relationship_edges for select using (public.is_family_member(family_id));
 
--- SIGNALS: subject reads own; guardian reads ONLY derived_safe of their subjects.
+-- SIGNALS: subject reads own; guardian reads ONLY derived_safe of their subjects. pilot_operator: none.
 create policy signals_self on signals for select
   using (subject_user_id = public.current_app_user_id());
 create policy signals_guardian_derived on signals for select
@@ -69,8 +69,9 @@ create policy flags_self_insert on flags for insert with check (subject_user_id 
 create policy consents_read on consents for select
   using (subject_user_id = public.current_app_user_id() or granted_by_user_id = public.current_app_user_id());
 
-create policy audit_admin on audit_events for select
-  using (exists (select 1 from users u where u.id = public.current_app_user_id() and u.is_platform_admin));
+-- audit: pilot_operator reads METADATA only (no content lives here).
+create policy audit_operator on audit_events for select
+  using (exists (select 1 from users u where u.id = public.current_app_user_id() and u.is_pilot_operator));
 
 create policy ingest_meta on ingest_runs for select
   using (subject_user_id = public.current_app_user_id() or public.is_guardian_of(subject_user_id));

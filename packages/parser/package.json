@@ -6,5 +6,6 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run" },
-  "dependencies": { "@mychoice/domain": "workspace:*" }
+  "dependencies": { "@mychoice/domain": "workspace:*" },
+  "devDependencies": { "@types/node": "^20.14.0" }
 }
