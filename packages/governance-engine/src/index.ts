@@ -3,3 +3,4 @@ export * from "./visibility";
 export * from "./compileContext";
 export * from "./status";
 export * from "./interpret";
+export * from "./finalize";
