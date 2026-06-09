@@ -1,23 +1,73 @@
 import type { Signal } from "@mychoice/domain";
 import { randomUUID } from "node:crypto";
-import { lateNightUsageMinutes, lateNightUsageTransform, type SessionEvent } from "../transforms/lateNightUsage";
+import { ALPHA_TIMEZONE, lateNightActivityBreakdown, type TimelineItem } from "../transforms/lateNightActivity";
 
-export interface InstagramExport { account: string; subject_user_id: string; family_id: string; events: { type: string; start: string; end: string }[]; }
-export interface RawExclusionManifest { transform_ids: string[]; raw_event_count: number; raw_retained: false; note: string; }
-export interface ParseResult { signals: Signal[]; manifest: RawExclusionManifest; }
+export const LATE_NIGHT_TRANSFORM_ID = "late-night-activity.v1";
+export const LATE_NIGHT_TRANSFORM_VERSION = "1.0.0";
+
+export interface IngestContext {
+  family_id: string;
+  subject_user_id: string;
+  ingest_run_id?: string | null;
+  timezone?: string;
+  now?: Date;
+}
+
+export interface RawExclusionManifest { transform_ids: string[]; raw_event_count: number; raw_retained: false; note: string }
+export interface ParseResult { signals: Signal[]; manifest: RawExclusionManifest }
+
+const toMs = (t: number | string) => (typeof t === "number" ? t * 1000 : Date.parse(t));
 
 /**
- * Deterministic parse: Instagram export -> derived Signal[]. Raw events are read in memory and never
- * returned or persisted (ADR-0002). Signal `type` uses Catalog v0.3 ids.
+ * Build the late-night-activity signal from sanitized Instagram viewed-content items
+ * (posts_viewed + videos_watched), each carrying only a timestamp (epoch seconds, UTC).
+ * Raw items are read in-memory; only the derived signal is returned (ADR-0002).
+ *
+ * `status` is intentionally LEFT UNSET here: layer-1 status computation belongs to the
+ * engine/persist stage (next increment), per the three-layer separation.
  */
-export function parseInstagramExport(exp: InstagramExport, now: Date = new Date()): ParseResult {
-  const sessions: SessionEvent[] = exp.events.filter((e) => e.type === "session").map((e) => ({ start: e.start, end: e.end }));
-  const window_start = sessions.length ? sessions[0].start : now.toISOString();
-  const window_end = sessions.length ? sessions[sessions.length - 1].end : now.toISOString();
+export function parseInstagramLateNight(items: TimelineItem[], ctx: IngestContext): ParseResult {
+  const tz = ctx.timezone ?? ALPHA_TIMEZONE;
+  const now = ctx.now ?? new Date();
+  const { total, night, percent } = lateNightActivityBreakdown(items, tz);
+
   const signals: Signal[] = [];
-  if (sessions.length >= (lateNightUsageTransform.min_events ?? 0)) {
-    signals.push({ id: randomUUID(), family_id: exp.family_id, subject_user_id: exp.subject_user_id, category: "attention_engagement", type: "late-night-activity", value: lateNightUsageMinutes(sessions), value_type: "scalar", unit: "minutes", window_start, window_end, confidence: 0.9, source_type: "instagram_export", ingest_run_id: null, transform_id: lateNightUsageTransform.id, transform_version: lateNightUsageTransform.version, privacy_class: "derived_safe", domain: "wellness", raw_excluded: true, raw_exclusion_note: "derived from session intervals; raw events not persisted", composite_of: null, created_at: now.toISOString(), expires_at: null, metadata: {} });
-    signals.push({ id: randomUUID(), family_id: exp.family_id, subject_user_id: exp.subject_user_id, category: "content_exposure", type: "content-volume", value: sessions.length, value_type: "scalar", unit: "count", window_start, window_end, confidence: 0.8, source_type: "instagram_export", ingest_run_id: null, transform_id: "content-volume.v1", transform_version: "1.0.0", privacy_class: "derived_safe", domain: "wellness", raw_excluded: true, raw_exclusion_note: "count only; no content retained", composite_of: null, created_at: now.toISOString(), expires_at: null, metadata: {} });
+  if (percent !== null) {
+    const ms = items.map((i) => toMs(i.timestamp)).sort((a, b) => a - b);
+    signals.push({
+      id: randomUUID(),
+      family_id: ctx.family_id,
+      subject_user_id: ctx.subject_user_id,
+      category: "attention_engagement",
+      type: "late-night-activity",
+      value: percent,
+      value_type: "scalar",
+      unit: "%",
+      window_start: new Date(ms[0]).toISOString(),
+      window_end: new Date(ms[ms.length - 1]).toISOString(),
+      confidence: 0.9,
+      source_type: "instagram_export",
+      ingest_run_id: ctx.ingest_run_id ?? null,
+      transform_id: LATE_NIGHT_TRANSFORM_ID,
+      transform_version: LATE_NIGHT_TRANSFORM_VERSION,
+      privacy_class: "derived_safe",
+      domain: "wellness",
+      raw_excluded: true,
+      raw_exclusion_note: "derived from viewed-item timestamps; raw items not persisted",
+      composite_of: null,
+      created_at: now.toISOString(),
+      expires_at: null,
+      // auditability: counts + provenance only, never content (SignalDerivationRecord precursor)
+      metadata: { timezone: tz, total_items: total, night_items: night, transform_id: LATE_NIGHT_TRANSFORM_ID, transform_version: LATE_NIGHT_TRANSFORM_VERSION },
+    });
   }
-  return { signals, manifest: { transform_ids: [lateNightUsageTransform.id, "content-volume.v1"], raw_event_count: exp.events.length, raw_retained: false, note: "Raw export parsed in-memory; only derived signals returned." } };
+  return {
+    signals,
+    manifest: {
+      transform_ids: [LATE_NIGHT_TRANSFORM_ID],
+      raw_event_count: total,
+      raw_retained: false,
+      note: "Sanitized viewed-item timestamps parsed in-memory; only the derived signal is returned.",
+    },
+  };
 }

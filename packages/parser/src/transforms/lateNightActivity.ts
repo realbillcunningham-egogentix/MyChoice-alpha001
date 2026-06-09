@@ -16,8 +16,22 @@ export interface TimelineItem {
  *  A number is interpreted as Unix epoch SECONDS (Instagram convention); a string as ISO 8601. */
 export function localHour(ts: number | string, timeZone: string = ALPHA_TIMEZONE): number {
   const date = typeof ts === "number" ? new Date(ts * 1000) : new Date(ts);
-  const formatted = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false }).format(date);
-  return parseInt(formatted, 10) % 24; // some engines render midnight as "24"
+  return parseInt(new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false }).format(date), 10) % 24;
+}
+
+export interface LateNightBreakdown {
+  total: number;
+  night: number;
+  percent: number | null;
+}
+
+/** Exact night/total breakdown + percent (null when no items). Single source of truth for the
+ *  signal value and the audit counts. */
+export function lateNightActivityBreakdown(items: TimelineItem[], timeZone: string = ALPHA_TIMEZONE): LateNightBreakdown {
+  const total = items.length;
+  if (total === 0) return { total: 0, night: 0, percent: null };
+  const night = items.filter((i) => NIGHT_HOURS.has(localHour(i.timestamp, timeZone))).length;
+  return { total, night, percent: Math.round((night / total) * 100) };
 }
 
 /**
@@ -25,7 +39,5 @@ export function localHour(ts: number | string, timeZone: string = ALPHA_TIMEZONE
  * (-> insufficient_data upstream). Pure; no I/O; no raw content retained.
  */
 export function lateNightActivityPercent(items: TimelineItem[], timeZone: string = ALPHA_TIMEZONE): number | null {
-  if (items.length === 0) return null;
-  const night = items.filter((i) => NIGHT_HOURS.has(localHour(i.timestamp, timeZone))).length;
-  return Math.round((night / items.length) * 100);
+  return lateNightActivityBreakdown(items, timeZone).percent;
 }
