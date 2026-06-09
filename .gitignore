@@ -10,3 +10,13 @@ coverage/
 supabase/.temp/
 supabase/.branches/
 .DS_Store
+
+# --- Raw GDPR / personal data: NEVER commit (ADR-0002; see docs/reference/instagram-export-field-map.md §4) ---
+# Canonical raw landing zone is OUTSIDE the repo: /Users/rocky/Documents/MyChoice/GDPR Data Files
+*.zip
+gdpr-raw/
+**/gdpr-raw/
+# Extracted raw Meta / Facebook / Instagram export folders (account-stamped)
+instagram-*/
+meta-20*/
+facebook-*/
