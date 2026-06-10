@@ -16,17 +16,16 @@ insert into relationship_edges (family_id, from_user_id, to_user_id, kind, domai
   ('fa000000-0000-0000-0000-000000000001','11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222','guardian_of', null);
 
 insert into agreements (id, family_id, title, description, category, status, created_by, effective_at) values
-  ('0a000000-0000-0000-0000-000000000001','fa000000-0000-0000-0000-000000000001','Weekday sleep','No more than 30 min late-night usage on weeknights','wellbeing','active','11111111-1111-1111-1111-111111111111', now());
+  ('0a000000-0000-0000-0000-000000000001','fa000000-0000-0000-0000-000000000001','Weekday sleep','Late-night activity: up to 15% on track; 15-30% worth a look; over 30% needs attention','wellbeing','active','11111111-1111-1111-1111-111111111111', now());
 
 insert into agreement_versions (id, agreement_id, version_no, human_text, rules, created_by) values
   ('0b000000-0000-0000-0000-000000000001','0a000000-0000-0000-0000-000000000001',1,
-   'No more than 30 minutes of late-night usage on weeknights',
+   'Late-night activity: up to 15% is on track; 15-30% is worth a look; over 30% needs attention.',
    jsonb_build_array(jsonb_build_object(
      'id','0c000000-0000-0000-0000-000000000001',
      'subject_signal_type','late-night-activity',
      'subject_category', null,
-     'operator','lte',
-     'params', jsonb_build_object('threshold',30),
+     'bands', jsonb_build_object('green_cut',15,'yellow_cut',30,'inverted',false),
      'window','weekday 21:30-07:00 local',
      'weight',1,
      'on_breach_intervention_level',3,
