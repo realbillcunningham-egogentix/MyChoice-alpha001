@@ -62,7 +62,7 @@ describe("composeLateNightStory full story", () => {
   });
   it("observation exposes only the allowed fields", () => {
     expect(Object.keys(story(items(0, 8)).observation).sort()).toEqual([
-      "night_items", "provenance_label", "signal_type", "total_items", "unit", "value", "window_end", "window_start",
+      "night_items", "provenance_label", "signal_type", "timezone", "total_items", "unit", "value", "window_end", "window_start",
     ]);
   });
 

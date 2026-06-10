@@ -14,6 +14,7 @@ export interface LateNightObservation {
   total_items: number | null;
   night_items: number | null;
   provenance_label: string;
+  timezone: string | null;
 }
 /** 5. User-facing explanation placeholder (deterministic copy; not AI). */
 export interface UserFacingExplanation { parent: string; child: string }
@@ -64,6 +65,7 @@ export function composeLateNightStory(items: TimelineItem[], ctx: IngestContext,
       total_items: typeof md.total_items === "number" ? md.total_items : null,
       night_items: typeof md.night_items === "number" ? md.night_items : null,
       provenance_label: derivation.provenance_label,
+      timezone: typeof md.timezone === "string" ? md.timezone : null,
     },
     signal_status: layered.signal_status,
     agreement_interpretation: layered.agreement_interpretation,

@@ -12,48 +12,58 @@ const rule: AgreementRule = { id: "0c000000-0000-0000-0000-000000000002", subjec
 const storyOf = (n: number, d: number) => composeLateNightStory(items(n, d), ctx, { rule, provenance_label: "instagram:mar-14-fixture" })!;
 
 describe("buildDigitalLandscapePreview", () => {
-  it("primary card is the real late-night-activity signal", () => {
+  it("primary is real; signal_status and agreement are separate", () => {
     const m = buildDigitalLandscapePreview(storyOf(1, 3)); // 25%
-    expect(m.primary.availability).toBe("available");
+    expect(m.available).toBe(true);
     expect(m.primary.value).toBe(25);
-    expect(m.headline.tone).toBe("watch");
+    expect(m.signal_status!.label).toBe("Worth a look");
+    expect(m.agreement!.label).toBe("Drifting from your agreement");
+    expect(m.audit!.timezone).toBe("America/New_York");
   });
-  it("other signals carry NO value/status (not analyzed)", () => {
+  it("others carry no value/status", () => {
     const m = buildDigitalLandscapePreview(storyOf(0, 8));
-    expect(m.others.length).toBeGreaterThan(0);
     expect(m.others.every((o) => o.value === undefined && o.availability !== "available")).toBe(true);
     expect(m.others.find((o) => o.id === "feed-diversity")!.availability).toBe("blocked");
-    expect(m.others.find((o) => o.id === "algorithmic-amplification")!.availability).toBe("blocked");
-    expect(m.others.find((o) => o.id === "content-volume")!.availability).toBe("coming_soon");
+  });
+  it("null story -> no-data model", () => {
+    const m = buildDigitalLandscapePreview(null);
+    expect(m.available).toBe(false);
+    expect(m.primary.value).toBeUndefined();
+    expect(m.signal_status).toBeNull();
+    expect(m.agreement).toBeNull();
+    expect(m.audit).toBeNull();
   });
 });
 
-describe("renderDigitalLandscapePreviewHtml", () => {
+describe("renderDigitalLandscapePreviewHtml (with data)", () => {
   const html = renderDigitalLandscapePreviewHtml(buildDigitalLandscapePreview(storyOf(1, 3)));
-  it("is a static HTML document with the real value + headline", () => {
-    expect(html.startsWith("<!doctype html>")).toBe(true);
-    expect(html).toContain("Late-night activity");
-    expect(html).toContain("25%");
+  it("shows BOTH the reading and the agreement separately", () => {
+    expect(html).toContain("Reading");
     expect(html).toContain("Worth a look");
+    expect(html).toContain("Your agreement");
+    expect(html).toContain("Drifting from your agreement");
   });
-  it("includes parent and child copy and a How we got this section", () => {
+  it("surfaces the timezone", () => { expect(html).toContain("America/New_York"); });
+  it("uses softened wording (no 'Blocked' label)", () => {
+    expect(html).not.toContain("Blocked");
+    expect(html).toContain("Not in your export");
+  });
+  it("includes parent/child copy + how-we-got-this; no raw content; no script", () => {
     expect(html).toContain("For you");
     expect(html).toContain("For your child");
     expect(html).toContain("How we got this");
-  });
-  it("marks unavailable signals clearly and does not imply analysis", () => {
-    expect(html).toContain("Coming soon");
-    expect(html).toContain("Blocked");
-    expect(html).toContain("Not yet available");
-    expect(html).toContain("not analyzed yet");
-    expect(html).toContain("Not analyzed yet");
-  });
-  it("contains no raw content (urls/handles/source ids)", () => {
     expect(html).not.toMatch(/https?:\/\//);
     expect(html).not.toMatch(/instagram\.com/);
     expect(html).not.toMatch(/fbid/);
-  });
-  it("has no <script> (static, no framework)", () => {
     expect(html).not.toContain("<script");
+  });
+});
+
+describe("renderDigitalLandscapePreviewHtml (no data)", () => {
+  const html = renderDigitalLandscapePreviewHtml(buildDigitalLandscapePreview(null));
+  it("renders an empty state without fabricated results", () => {
+    expect(html).toContain("Not enough data yet");
+    expect(html).not.toContain("How we got this");
+    expect(html).toContain("Coming next");
   });
 });
